@@ -1,14 +1,14 @@
-"""Lightweight scikit-learn model for optional UPI fraud scoring."""
+"""Lightweight scikit-learn model for optional UPI fraud scoring (no pandas)."""
 
 from __future__ import annotations
 
+import csv
 import os
 import re
 from typing import Any
 
 import joblib
 import numpy as np
-import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
@@ -19,6 +19,17 @@ MODEL_PATH = os.path.join(BASE_DIR, "fraud_model.joblib")
 SUSPICIOUS_TOKENS = [
     "refund", "lottery", "prize", "kyc", "support", "helpline", "cashback",
     "otp", "verify", "official", "claim", "bonus", "urgent", "blocked",
+]
+
+FEATURE_COLUMNS = [
+    "token_hits",
+    "digit_len",
+    "handle_len",
+    "has_at",
+    "amount_bin",
+    "msg_urgency",
+    "msg_len",
+    "psp_common",
 ]
 
 
@@ -59,54 +70,43 @@ def extract_features(upi_id: str, amount: float = 0.0, message: str = "") -> lis
     ]
 
 
-FEATURE_COLUMNS = [
-    "token_hits",
-    "digit_len",
-    "handle_len",
-    "has_at",
-    "amount_bin",
-    "msg_urgency",
-    "msg_len",
-    "psp_common",
-]
-
-
-def _ensure_dataset() -> pd.DataFrame:
-    if os.path.exists(DATASET_PATH):
-        return pd.read_csv(DATASET_PATH)
-
-    # Fallback synthetic rows if CSV missing
-    rows = []
-    samples = [
-        ("rahul.sharma@oksbi", 500, "", 0),
-        ("merchant.store@ybl", 1200, "order payment", 0),
-        ("scamrefund@paytm", 1, "claim your refund otp", 1),
-        ("lotterywin@oksbi", 0, "you won a prize send otp", 1),
-        ("kycupdate@ybl", 50, "urgent kyc update or blocked", 1),
-        ("cafe.corner@ibl", 280, "tea snacks", 0),
-        ("support-care@axl", 9999, "verify account now", 1),
-        ("anita1998@okhdfcbank", 750, "", 0),
-        ("cashbackdeal@ibl", 100, "limited cashback claim", 1),
-        ("helpline24x7@upi", 5000, " helpline payment", 1),
-    ]
-    for upi, amt, msg, label in samples:
-        feats = extract_features(upi, amt, msg)
-        rows.append(feats + [label])
-    df = pd.DataFrame(rows, columns=FEATURE_COLUMNS + ["label"])
-    df.to_csv(DATASET_PATH, index=False)
-    return df
+def _read_dataset_rows() -> list[dict[str, str]]:
+    if not os.path.exists(DATASET_PATH):
+        samples = [
+            ("rahul.sharma@oksbi", "500", "", "0"),
+            ("merchant.store@ybl", "1200", "order payment", "0"),
+            ("scamrefund@paytm", "1", "claim your refund otp", "1"),
+            ("lotterywin@oksbi", "0", "you won a prize send otp", "1"),
+            ("kycupdate@ybl", "50", "urgent kyc update or blocked", "1"),
+            ("cafe.corner@ibl", "280", "tea snacks", "0"),
+            ("support-care@axl", "9999", "verify account now", "1"),
+            ("anita1998@okhdfcbank", "750", "", "0"),
+            ("cashbackdeal@ibl", "100", "limited cashback claim", "1"),
+            ("helpline24x7@upi", "5000", "helpline payment", "1"),
+        ]
+        os.makedirs(BASE_DIR, exist_ok=True)
+        with open(DATASET_PATH, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(
+                fh, fieldnames=["upi_id", "amount", "message", "label"]
+            )
+            writer.writeheader()
+            for upi, amt, msg, label in samples:
+                writer.writerow(
+                    {"upi_id": upi, "amount": amt, "message": msg, "label": label}
+                )
+    with open(DATASET_PATH, newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
 
 
 def train_and_save(force: bool = False) -> dict[str, Any]:
     if os.path.exists(MODEL_PATH) and not force:
         return {"status": "exists", "path": MODEL_PATH}
 
-    df = _ensure_dataset()
-    if "label" not in df.columns:
-        # Build features from raw columns if present
-        feature_rows = []
-        labels = []
-        for _, row in df.iterrows():
+    rows = _read_dataset_rows()
+    feature_rows: list[list[float]] = []
+    labels: list[int] = []
+    for row in rows:
+        if "upi_id" in row:
             feature_rows.append(
                 extract_features(
                     str(row.get("upi_id", "")),
@@ -114,31 +114,19 @@ def train_and_save(force: bool = False) -> dict[str, Any]:
                     str(row.get("message", "")),
                 )
             )
-            labels.append(int(row.get("label", 0)))
-        X = np.array(feature_rows, dtype=float)
-        y = np.array(labels, dtype=int)
-    else:
-        # Dataset may already be feature-encoded or raw
-        if set(FEATURE_COLUMNS).issubset(df.columns):
-            X = df[FEATURE_COLUMNS].to_numpy(dtype=float)
-            y = df["label"].to_numpy(dtype=int)
+            labels.append(int(float(row.get("label", 0) or 0)))
         else:
-            feature_rows = []
-            for _, row in df.iterrows():
-                feature_rows.append(
-                    extract_features(
-                        str(row.get("upi_id", "")),
-                        float(row.get("amount", 0) or 0),
-                        str(row.get("message", "")),
-                    )
-                )
-            X = np.array(feature_rows, dtype=float)
-            y = df["label"].to_numpy(dtype=int)
+            # Already feature-encoded CSV
+            feature_rows.append([float(row.get(c, 0) or 0) for c in FEATURE_COLUMNS])
+            labels.append(int(float(row.get("label", 0) or 0)))
+
+    X = np.array(feature_rows, dtype=float)
+    y = np.array(labels, dtype=int)
 
     if len(np.unique(y)) < 2 or len(y) < 4:
-        # Degenerate — still fit a tiny model
         clf = RandomForestClassifier(n_estimators=50, random_state=42)
         clf.fit(X, y)
+        acc = None
     else:
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.25, random_state=42, stratify=y if len(y) >= 8 else None
@@ -151,11 +139,9 @@ def train_and_save(force: bool = False) -> dict[str, Any]:
         )
         clf.fit(X_train, y_train)
         acc = float(clf.score(X_test, y_test)) if len(X_test) else None
-        joblib.dump({"model": clf, "features": FEATURE_COLUMNS, "accuracy": acc}, MODEL_PATH)
-        return {"status": "trained", "path": MODEL_PATH, "accuracy": acc}
 
-    joblib.dump({"model": clf, "features": FEATURE_COLUMNS, "accuracy": None}, MODEL_PATH)
-    return {"status": "trained", "path": MODEL_PATH, "accuracy": None}
+    joblib.dump({"model": clf, "features": FEATURE_COLUMNS, "accuracy": acc}, MODEL_PATH)
+    return {"status": "trained", "path": MODEL_PATH, "accuracy": acc}
 
 
 def _load_model():
@@ -171,7 +157,6 @@ def predict_risk_score(upi_id: str, amount: float = 0.0, message: str = "") -> i
     feats = np.array([extract_features(upi_id, amount, message)], dtype=float)
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(feats)[0]
-        # Probability of class 1 (fraud)
         classes = list(model.classes_)
         if 1 in classes:
             p = float(proba[classes.index(1)])

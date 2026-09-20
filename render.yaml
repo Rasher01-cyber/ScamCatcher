@@ -14,9 +14,3 @@ services:
         sync: false
       - key: RAZORPAY_KEY_SECRET
         sync: false
-      - key: CASHFREE_CLIENT_ID
-        sync: false
-      - key: CASHFREE_CLIENT_SECRET
-        sync: false
-      - key: CASHFREE_ENV
-        value: production

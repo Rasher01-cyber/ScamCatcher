@@ -17,11 +17,12 @@ Use **Render**, Railway, Fly.io, or PythonAnywhere instead.
    - **Runtime:** Python
    - **Build Command:** `pip install -r requirements.txt`
    - **Start Command:** `gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120`
-5. Add env vars (optional for live UPI checks):
+5. **Important — Environment → Environment Variables:**
+   - `PYTHON_VERSION` = `3.11.9`  ← required (Render’s default 3.14 breaks installs)
    - `UPI_GUARD_SECRET` = any long random string
    - `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` (optional)
-6. Click **Create Web Service**.
-7. After build, open: `https://scamcatcherrr.onrender.com` (exact URL shown in Render).
+6. Click **Manual Deploy → Deploy latest commit**.
+
 
 Free tier may sleep after idle; first load can take ~30–60s.
 
