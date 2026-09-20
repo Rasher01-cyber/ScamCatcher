@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Report ready for Cybercrime{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="verdict-banner verdict-caution mb-4">
+      <div>
+        <div class="verdict-kicker">Report #{{ report.id }} saved</div>
+        <h1 class="h3 mb-1">Send this to cybercrime now</h1>
+        <p class="mb-0">Nearest guidance for <strong>{{ report.victim_city }}, {{ report.victim_state }}</strong></p>
+      </div>
+    </div>
+
+    <div class="result-card mb-3">
+      <h2 class="h5">Your nearest cybercrime path</h2>
+      <p class="mb-1"><strong>{{ cell.name }}</strong></p>
+      <p class="mb-1">Helpline: <a href="tel:{{ cell.helpline.split('/')[0].strip() }}">{{ cell.helpline }}</a></p>
+      <p class="mb-3">{{ cell.guidance }}</p>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-accent btn-lg" href="{{ portal }}" target="_blank" rel="noopener">
+          Open National Cyber Crime Portal
+        </a>
+        <a class="btn btn-outline-light btn-lg" href="tel:{{ helpline }}">Call {{ helpline }}</a>
+      </div>
+      <p class="form-text mt-3 mb-0">
+        On the portal, choose <em>Report financial fraud</em>, pick your state/city — it reaches the correct local cybercrime branch.
+      </p>
+    </div>
+
+    <div class="result-card mb-3">
+      <h2 class="h5">Complaint pack (copy into the portal)</h2>
+      <textarea class="form-control complaint-box" id="complaint-text" rows="16" readonly>{{ report.complaint_text }}</textarea>
+      <button type="button" class="btn btn-accent mt-3" id="copy-complaint">Copy complaint text</button>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="btn btn-outline-light">Back to home</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('copy-complaint')?.addEventListener('click', async function () {
+    const box = document.getElementById('complaint-text');
+    try {
+      await navigator.clipboard.writeText(box.value);
+      this.textContent = 'Copied!';
+    } catch (e) {
+      box.select();
+      document.execCommand('copy');
+      this.textContent = 'Copied!';
+    }
+  });
+</script>
+{% endblock %}

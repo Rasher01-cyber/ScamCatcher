@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-intro mb-4">
+  <h1>Admin dashboard</h1>
+  <p>Monitor checks, review community reports, and manage the fraud-report database.</p>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-xl">
+    <div class="stat-tile"><span class="stat-num">{{ stats.users }}</span><span class="stat-label">Users</span></div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="stat-tile"><span class="stat-num">{{ stats.checks }}</span><span class="stat-label">Checks</span></div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="stat-tile"><span class="stat-num">{{ stats.high_risk_checks }}</span><span class="stat-label">High-risk checks</span></div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="stat-tile"><span class="stat-num">{{ stats.reports }}</span><span class="stat-label">Reports</span></div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="stat-tile accent"><span class="stat-num">{{ stats.pending }}</span><span class="stat-label">Pending review</span></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="result-card">
+      <h2 class="h5 mb-3">Fraud reports</h2>
+      <div class="table-responsive">
+        <table class="table table-darkish align-middle mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>UPI ID</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in stats.recent_reports %}
+            <tr>
+              <td>{{ r.id }}</td>
+              <td><code>{{ r.upi_id }}</code><div class="small text-body-secondary">{{ r.reporter_name or 'anonymous' }} · {{ r.created_at }}</div></td>
+              <td>{{ r.reason }}</td>
+              <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
+              <td class="text-nowrap">
+                {% if r.status == 'pending' %}
+                <form class="d-inline" method="post" action="{{ url_for('admin_update_report', report_id=r.id, status='verified') }}">
+                  <button class="btn btn-sm btn-success">Verify</button>
+                </form>
+                <form class="d-inline" method="post" action="{{ url_for('admin_update_report', report_id=r.id, status='rejected') }}">
+                  <button class="btn btn-sm btn-outline-light">Reject</button>
+                </form>
+                {% else %}
+                <span class="small text-body-secondary">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center text-body-secondary">No reports yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="result-card mb-4">
+      <h2 class="h5 mb-3">Known risky UPI IDs</h2>
+      <ul class="list-group list-group-flush admin-list">
+        {% for k in stats.known_risky %}
+        <li class="list-group-item">
+          <code>{{ k.upi_id }}</code>
+          <span class="badge risk-badge-{{ k.risk_level }}">{{ k.risk_level }}</span>
+          <div class="small text-body-secondary">{{ k.reason }}</div>
+        </li>
+        {% else %}
+        <li class="list-group-item text-body-secondary">Empty list.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="result-card">
+      <h2 class="h5 mb-3">Recent checks</h2>
+      <ul class="list-group list-group-flush admin-list">
+        {% for c in stats.recent_checks %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between gap-2">
+            <strong class="text-capitalize">{{ c.check_type }}</strong>
+            <span class="badge risk-badge-{{ c.risk_level }}">{{ c.risk_score }} · {{ c.risk_level }}</span>
+          </div>
+          <div class="small text-truncate">{{ c.input_summary }}</div>
+          <div class="small text-body-secondary">{{ c.username or 'guest' }} · {{ c.created_at }}</div>
+        </li>
+        {% else %}
+        <li class="list-group-item text-body-secondary">No checks logged yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

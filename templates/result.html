@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Check Result{% endblock %}
+
+{% block content %}
+{% set level = result.risk_level or 'unknown' %}
+{% set auth = result.authenticity %}
+{% set verdict = result.verdict or 'caution' %}
+
+<div class="page-intro mb-4 d-flex flex-wrap justify-content-between align-items-end gap-3">
+  <div>
+    <h1>Full safety result</h1>
+    <p class="mb-0">Everything related to your input — defects, authenticity, and next action.</p>
+  </div>
+  <a href="{{ url_for('index') }}" class="btn btn-outline-light">New check</a>
+</div>
+
+<div class="verdict-banner verdict-{{ verdict }} mb-4">
+  <div>
+    <div class="verdict-kicker">Final verdict</div>
+    <h2 class="h3 mb-1">{{ result.verdict_label or (level ~ ' risk') }}</h2>
+    <p class="mb-0 opacity-90">Detected as: <strong>{{ result.detected_as or result.check_type }}</strong>
+      · Score {{ result.risk_score }}/100 ({{ level }})</p>
+  </div>
+  <div class="verdict-actions">
+    {% if result.allow_pay and result.pay_link %}
+    <a class="btn btn-accent btn-lg" href="{{ result.pay_link }}">
+      <i class="bi bi-phone"></i> Open UPI app to pay
+    </a>
+    <p class="small mt-2 mb-0">Opens GPay / PhonePe / BHIM / bank UPI on your phone. Confirm the name on screen before PIN.</p>
+    {% else %}
+    <button class="btn btn-secondary btn-lg" type="button" disabled>
+      <i class="bi bi-slash-circle"></i> Pay blocked
+    </button>
+    <p class="small mt-2 mb-0">Payment is disabled because this looks unsafe or incomplete.</p>
+    {% if result.upi_id %}
+    <a class="btn btn-outline-light btn-sm mt-2" href="{{ url_for('report') }}?upi={{ result.upi_id|urlencode }}">Report to cybercrime</a>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="score-panel risk-{{ level }}">
+      <div class="score-ring" data-score="{{ result.risk_score }}" style="--score: {{ result.risk_score }}">
+        <div class="score-inner">
+          <span class="score-value">{{ result.risk_score }}</span>
+          <span class="score-label">/ 100</span>
+        </div>
+      </div>
+      <h2 class="h4 mt-3 text-uppercase">{{ verdict }}</h2>
+      {% if auth %}
+      <div class="verdict-badge status-{{ auth.status }} mt-2">{{ auth.label }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="result-card mb-3">
+      <h3 class="h5"><i class="bi bi-bug"></i> Defects found</h3>
+      {% if result.defects %}
+      <ul class="warn-list">
+        {% for d in result.defects %}
+        <li>{{ d }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="mb-0 text-success-soft">No hard defects from format / authenticity rules.</p>
+      {% endif %}
+    </div>
+
+    {% if result.related %}
+    <div class="result-card mb-3">
+      <h3 class="h5"><i class="bi bi-link-45deg"></i> Related to this check</h3>
+      <ul class="explain-list">
+        {% for r in result.related %}
+        <li>{{ r }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if auth %}
+    <div class="result-card mb-3 auth-card-panel status-{{ auth.status }}">
+      <h3 class="h5"><i class="bi bi-patch-check"></i> Authenticity</h3>
+      <div class="auth-pills mb-3">
+        <span class="auth-pill">Existence: {{ auth.existence_label }}</span>
+        <span class="auth-pill">Genuine?: {{ auth.genuine_label }}</span>
+      </div>
+      {% if auth.payee_name_live %}
+      <div class="live-name-box mb-3">
+        <div class="small text-body-secondary">Payee name (API / your confirm)</div>
+        <strong>{{ auth.payee_name_live }}</strong>
+      </div>
+      {% endif %}
+      <p class="mb-3">{{ auth.summary }}</p>
+      {% if auth.checks %}
+      <ul class="auth-checks">
+        {% for c in auth.checks %}
+        <li class="{% if c.ok is sameas true %}ok{% elif c.ok is sameas false %}bad{% else %}na{% endif %}">
+          <span class="check-icon">
+            {% if c.ok is sameas true %}<i class="bi bi-check-circle-fill"></i>
+            {% elif c.ok is sameas false %}<i class="bi bi-x-circle-fill"></i>
+            {% else %}<i class="bi bi-question-circle-fill"></i>{% endif %}
+          </span>
+          <div>
+            <strong>{{ c.name }}</strong>
+            <div class="small text-body-secondary">{{ c.detail }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if auth.limitation %}
+      <p class="limit-note mt-3 mb-0">{{ auth.limitation }}
+        <a href="{{ url_for('setup_apis') }}">Open Live API setup</a>
+      </p>
+      {% endif %}
+    </div>
+
+    {% if result.upi_id and (auth.needs_confirm or auth.exist_ok is none or auth.genuine_ok is none) %}
+    <div class="result-card mb-3 confirm-card">
+      <h3 class="h5"><i class="bi bi-phone"></i> Complete the “?” checks — Confirm from your UPI app</h3>
+      <p class="text-body-secondary">
+        This works <strong>without</strong> Razorpay keys. Open GPay / PhonePe / BHIM, enter
+        <code>{{ result.upi_id }}</code> (do not pay yet), then answer below.
+      </p>
+      {% if result.app_preview_link %}
+      <a class="btn btn-outline-light btn-sm mb-3" href="{{ result.app_preview_link }}">Open ID in UPI app (preview)</a>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('confirm_vpa') }}" class="check-form">
+        <input type="hidden" name="upi_id" value="{{ result.upi_id }}">
+        <input type="hidden" name="amount" value="{{ result.amount or 0 }}">
+
+        <div class="mb-3">
+          <label class="form-label">1) Live existence — what did the app say?</label>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="existence" id="ex-reg" value="registered" required>
+            <label class="form-check-label" for="ex-reg">Registered — app showed a payee name</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="existence" id="ex-inv" value="invalid">
+            <label class="form-check-label" for="ex-inv">Invalid / not registered — never generated</label>
+          </div>
+        </div>
+
+        <div class="mb-3" id="name-fields">
+          <label class="form-label" for="payee-name">2) Payee name shown in the app</label>
+          <input class="form-control" id="payee-name" name="payee_name" placeholder="Exact name on payment screen">
+          <label class="form-label mt-3">3) Genuine person — does that name match who you want to pay?</label>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="name_match" id="nm-yes" value="yes">
+            <label class="form-check-label" for="nm-yes">Yes — name matches (genuine for this payment)</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="name_match" id="nm-no" value="no">
+            <label class="form-check-label" for="nm-no">No — different person / merchant</label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-accent">Apply confirmation (turn ? into ✔ / ✖)</button>
+      </form>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <div class="result-card mb-3">
+      <h3 class="h5"><i class="bi bi-exclamation-triangle"></i> Warning signs</h3>
+      {% if result.warnings %}
+      <ul class="warn-list">
+        {% for w in result.warnings %}
+        <li>{{ w }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="mb-0 text-success-soft">No strong warnings.</p>
+      {% endif %}
+    </div>
+
+    <div class="result-card mb-3">
+      <h3 class="h5"><i class="bi bi-lightbulb"></i> Explanation</h3>
+      <ul class="explain-list">
+        {% for e in result.explanations %}
+        <li>{{ e }}</li>
+        {% else %}
+        <li>Combined analysis complete.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="result-card">
+      <h3 class="h5"><i class="bi bi-shield-check"></i> What you should do</h3>
+      <ul class="explain-list">
+        {% for r in result.recommendations %}
+        <li>{{ r }}</li>
+        {% endfor %}
+      </ul>
+      {% if result.upi_id and not result.allow_pay %}
+      <a class="btn btn-accent mt-2" href="{{ url_for('report') }}?upi={{ result.upi_id|urlencode }}">
+        Report this UPI to cybercrime
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

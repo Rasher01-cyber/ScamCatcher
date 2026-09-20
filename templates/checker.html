@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Risk Checker{% endblock %}
+
+{% block content %}
+<div class="page-intro mb-4">
+  <h1>Risk Checker</h1>
+  <p>Check format, fake signals, and how to confirm if a UPI ID / QR / mobile is real — plus a fraud-risk score.</p>
+</div>
+
+<div class="limit-banner mb-4">
+  <strong>Why some rows show “?”:</strong>
+  NPCI does not give websites a free public “does this UPI exist?” API.
+  Those rows become ✔ / ✖ after you add a <em>genuine merchant API</em>
+  (Razorpay or Cashfree) in <code>.env</code> — see <code>.env.example</code>.
+  Invalid formats and unknown <code>@providers</code> already show ✖ without any API.
+  {% if verification_api %}
+  <span class="d-block mt-2">
+    {% if verification_api.upi_live_enabled %}
+    <span class="badge text-bg-success">Live UPI API: ON ({{ verification_api.upi_providers|join(', ') }})</span>
+    {% else %}
+    <span class="badge text-bg-secondary">Live UPI API: OFF</span>
+    {% endif %}
+    {% if verification_api.mobile_live_enabled %}
+    <span class="badge text-bg-success">Mobile API: ON</span>
+    {% else %}
+    <span class="badge text-bg-secondary">Mobile API: OFF</span>
+    {% endif %}
+  </span>
+  {% endif %}
+</div>
+
+<div class="checker-shell">
+  <ul class="nav nav-pills checker-tabs mb-4" id="checkerTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'upi' %}active{% endif %}" id="tab-upi" data-bs-toggle="pill" data-bs-target="#pane-upi" type="button" role="tab">UPI ID</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'transaction' or not active_tab %}active{% endif %}" id="tab-tx" data-bs-toggle="pill" data-bs-target="#pane-tx" type="button" role="tab">Transaction</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'qr' %}active{% endif %}" id="tab-qr" data-bs-toggle="pill" data-bs-target="#pane-qr" type="button" role="tab">QR Code</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'mobile' %}active{% endif %}" id="tab-mobile" data-bs-toggle="pill" data-bs-target="#pane-mobile" type="button" role="tab">Mobile</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'message' %}active{% endif %}" id="tab-msg" data-bs-toggle="pill" data-bs-target="#pane-msg" type="button" role="tab">Message</button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade {% if active_tab == 'upi' %}show active{% endif %}" id="pane-upi" role="tabpanel">
+      <form method="post" class="check-card check-form" data-validate="upi">
+        <input type="hidden" name="check_type" value="upi">
+        <h2 class="h5 mb-3">UPI ID — valid, fake, or never registered?</h2>
+        <p class="text-body-secondary small mb-3">Format, known providers, scam keywords, fraud DB{% if verification_api and verification_api.upi_live_enabled %}, plus live VPA API{% endif %}.</p>
+        <div class="sample-chips mb-3">
+          <span class="small text-body-secondary me-1">Try:</span>
+          <button type="button" class="sample-chip" data-fill="#upi-only" data-value="not-a-real-id">invalid format</button>
+          <button type="button" class="sample-chip" data-fill="#upi-only" data-value="refund@fakenbank">fake provider</button>
+          <button type="button" class="sample-chip" data-fill="#upi-only" data-value="scamrefund@paytm">known scam</button>
+          <button type="button" class="sample-chip" data-fill="#upi-only" data-value="rahul.sharma@oksbi">plausible</button>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="upi-only">UPI ID</label>
+          <input class="form-control form-control-lg" id="upi-only" name="upi_id" placeholder="name@oksbi or 98XXXXXXXX@ybl" required>
+        </div>
+        <button type="submit" class="btn btn-accent">Check authenticity &amp; risk</button>
+      </form>
+    </div>
+
+    <div class="tab-pane fade {% if active_tab == 'transaction' or not active_tab %}show active{% endif %}" id="pane-tx" role="tabpanel">
+      <form method="post" class="check-card check-form" data-validate="transaction">
+        <input type="hidden" name="check_type" value="transaction">
+        <h2 class="h5 mb-3">Transaction-risk analysis</h2>
+        <div class="sample-chips mb-3">
+          <span class="small text-body-secondary me-1">Try:</span>
+          <button type="button" class="sample-chip" data-fill="#tx-upi" data-value="scamrefund@paytm" data-fill2="#tx-amount" data-value2="1">scam + ₹1</button>
+          <button type="button" class="sample-chip" data-fill="#tx-upi" data-value="rahul.sharma@oksbi" data-fill2="#tx-amount" data-value2="500">normal ₹500</button>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="tx-upi">UPI ID</label>
+          <input class="form-control form-control-lg" id="tx-upi" name="upi_id" placeholder="example@upi" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="tx-amount">Amount</label>
+          <div class="input-group input-group-lg">
+            <span class="input-group-text">₹</span>
+            <input class="form-control" id="tx-amount" name="amount" type="number" min="0" step="0.01" placeholder="500" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-accent">Check Transaction</button>
+      </form>
+    </div>
+
+    <div class="tab-pane fade {% if active_tab == 'qr' %}show active{% endif %}" id="pane-qr" role="tabpanel">
+      <form method="post" enctype="multipart/form-data" class="check-card check-form" data-validate="qr">
+        <input type="hidden" name="check_type" value="qr">
+        <h2 class="h5 mb-3">QR — real UPI payee or fake?</h2>
+        <p class="text-body-secondary small mb-3">We inspect structure and the hidden payee ID. Always re-check the name inside your official UPI app before PIN.</p>
+        <div class="sample-chips mb-3">
+          <span class="small text-body-secondary me-1">Try:</span>
+          <button type="button" class="sample-chip" data-fill="#qr-text" data-value="upi://pay?pa=scamrefund@paytm&amp;am=1&amp;pn=Refund">risky QR link</button>
+          <button type="button" class="sample-chip" data-fill="#qr-text" data-value="upi://pay?pa=cafe.corner@ybl&amp;am=280&amp;pn=Cafe%20Corner">normal shop QR</button>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="qr-image">Upload QR image</label>
+          <input class="form-control" type="file" id="qr-image" name="qr_image" accept="image/*">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="qr-text">Or paste UPI link / payload</label>
+          <textarea class="form-control" id="qr-text" name="qr_text" rows="3" placeholder="upi://pay?pa=merchant@ybl&amp;am=500&amp;pn=Shop"></textarea>
+        </div>
+        <button type="submit" class="btn btn-accent">Analyze QR authenticity</button>
+      </form>
+    </div>
+
+    <div class="tab-pane fade {% if active_tab == 'mobile' %}show active{% endif %}" id="pane-mobile" role="tabpanel">
+      <form method="post" class="check-card check-form" data-validate="mobile">
+        <input type="hidden" name="check_type" value="mobile">
+        <h2 class="h5 mb-3">Mobile number — valid or fake-looking?</h2>
+        <p class="text-body-secondary small mb-3">Indian format + fabricated patterns. Ownership still needs a phone call.</p>
+        <div class="sample-chips mb-3">
+          <span class="small text-body-secondary me-1">Try:</span>
+          <button type="button" class="sample-chip" data-fill="#mobile-num" data-value="9876543210">fake pattern</button>
+          <button type="button" class="sample-chip" data-fill="#mobile-num" data-value="12345">invalid</button>
+          <button type="button" class="sample-chip" data-fill="#mobile-num" data-value="9876543211">plausible format</button>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="mobile-num">Mobile number</label>
+          <input class="form-control form-control-lg" id="mobile-num" name="mobile" placeholder="98XXXXXXXX or +91 98XXXXXXXX" required>
+        </div>
+        <button type="submit" class="btn btn-accent">Check mobile</button>
+      </form>
+    </div>
+
+    <div class="tab-pane fade {% if active_tab == 'message' %}show active{% endif %}" id="pane-msg" role="tabpanel">
+      <form method="post" class="check-card check-form" data-validate="message">
+        <input type="hidden" name="check_type" value="message">
+        <h2 class="h5 mb-3">Suspicious-message analyzer</h2>
+        <div class="sample-chips mb-3">
+          <span class="small text-body-secondary me-1">Try:</span>
+          <button type="button" class="sample-chip" data-fill="#msg-body" data-value="Urgent KYC update or account blocked. Share OTP and pay to kycupdate@ybl">KYC scam SMS</button>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="msg-body">Message text</label>
+          <textarea class="form-control" id="msg-body" name="message" rows="5" placeholder="Paste SMS / WhatsApp / email content here" required></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="msg-upi">Related UPI ID (optional)</label>
+          <input class="form-control" id="msg-upi" name="upi_id" placeholder="scammer@paytm">
+        </div>
+        <button type="submit" class="btn btn-accent">Analyze Message</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab) {
+      const map = { upi: 'tab-upi', transaction: 'tab-tx', qr: 'tab-qr', mobile: 'tab-mobile', message: 'tab-msg' };
+      const btn = document.getElementById(map[tab]);
+      if (btn) new bootstrap.Tab(btn).show();
+    }
+    document.querySelectorAll('.sample-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        const el = document.querySelector(chip.getAttribute('data-fill'));
+        if (el) el.value = chip.getAttribute('data-value') || '';
+        const el2 = chip.getAttribute('data-fill2');
+        if (el2) {
+          const t = document.querySelector(el2);
+          if (t) t.value = chip.getAttribute('data-value2') || '';
+        }
+      });
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Report to Cybercrime{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="page-intro mb-4">
+      <h1>Report suspicious UPI</h1>
+      <p>
+        We save the report here and prepare a complaint pack for the
+        <strong>National Cyber Crime Portal</strong>, which routes it to your nearest cybercrime branch.
+        Helpline: <a href="tel:{{ helpline }}">{{ helpline }}</a>
+      </p>
+    </div>
+
+    <div class="limit-banner mb-4">
+      Websites cannot silently file a police FIR for you. After you submit, we open the official path:
+      <a href="{{ portal }}" target="_blank" rel="noopener">cybercrime.gov.in</a>
+      + helpline <strong>{{ helpline }}</strong> for financial fraud.
+    </div>
+
+    <form method="post" class="check-card check-form" data-validate="report">
+      <div class="mb-3">
+        <label class="form-label" for="report-upi">Suspicious UPI ID</label>
+        <input class="form-control form-control-lg" id="report-upi" name="upi_id"
+               value="{{ request.args.get('upi', '') }}" placeholder="suspicious@paytm" required>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="victim-state">Your state (for nearest cyber cell)</label>
+          <select class="form-select form-select-lg" id="victim-state" name="victim_state" required>
+            <option value="">Select state</option>
+            {% for s in states %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+            <option value="Other">Other / Not listed</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="victim-city">Your city</label>
+          <input class="form-control form-control-lg" id="victim-city" name="victim_city" placeholder="e.g. Pune" required>
+        </div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label class="form-label" for="victim-phone">Your mobile</label>
+          <input class="form-control form-control-lg" id="victim-phone" name="victim_phone" placeholder="98XXXXXXXX" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="amount-involved">Amount lost (if any)</label>
+          <input class="form-control form-control-lg" id="amount-involved" name="amount_involved" placeholder="₹ amount or leave blank">
+        </div>
+      </div>
+      <div class="mb-3 mt-3">
+        <label class="form-label" for="report-reason">Reason</label>
+        <select class="form-select form-select-lg" id="report-reason" name="reason" required>
+          <option value="">Select a reason</option>
+          <option>Phishing / OTP request</option>
+          <option>Fake refund agent</option>
+          <option>Lottery / prize scam</option>
+          <option>Fake KYC / account block threat</option>
+          <option>Impersonating bank / support</option>
+          <option>QR code fraud</option>
+          <option>Other suspicious activity</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="form-label" for="report-desc">What happened</label>
+        <textarea class="form-control" id="report-desc" name="description" rows="4"
+                  placeholder="Date, time, apps, chat snippets, transaction IDs…" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-accent btn-lg">Save &amp; prepare cybercrime report</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

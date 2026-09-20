@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Live API Setup — Open-world UPI detection{% endblock %}
+
+{% block content %}
+<div class="page-intro mb-4">
+  <h1>Open-world UPI detection (Razorpay / Cashfree)</h1>
+  <p>
+    Format checks always run offline. To know if a UPI ID <strong>really exists</strong> on the live UPI network
+    and to fetch the <strong>registered payee name</strong>, add Razorpay or Cashfree API keys below.
+  </p>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="result-card h-100">
+      <h2 class="h6">Website (this app)</h2>
+      <p class="mb-2"><a href="http://127.0.0.1:5000/" target="_blank">http://127.0.0.1:5000/</a></p>
+      <p class="mb-0 small text-body-secondary">Home check page</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="result-card h-100">
+      <h2 class="h6">This setup page</h2>
+      <p class="mb-2"><a href="http://127.0.0.1:5000/setup" target="_blank">http://127.0.0.1:5000/setup</a></p>
+      <p class="mb-0 small text-body-secondary">Add API keys here</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="result-card h-100">
+      <h2 class="h6">LAN link (phone on same Wi‑Fi)</h2>
+      <p class="mb-2"><code>http://&lt;your-pc-ip&gt;:5000/</code></p>
+      <p class="mb-0 small text-body-secondary">Shown in terminal when you run <code>python app.py</code></p>
+    </div>
+  </div>
+</div>
+
+<div class="limit-banner mb-4">
+  <strong>What detects what?</strong><br>
+  • <strong>Exists on UPI?</strong> → Razorpay / Cashfree live API (open world) <em>or</em> Confirm-from-app form<br>
+  • <strong>Genuine person?</strong> → API returns the bank-linked <em>name</em>; you confirm it matches who you want to pay (no API can prove “this is my friend” alone)<br>
+  • <strong>Without keys:</strong> format / fake-pattern / fraud DB only — existence shows “?” until you confirm or add keys
+</div>
+
+<div class="limit-banner mb-4">
+  Status now:
+  {% if status.upi_live_enabled %}
+  <span class="badge text-bg-success">Live UPI API ON ({{ status.upi_providers|join(', ') }})</span>
+  {% else %}
+  <span class="badge text-bg-warning text-dark">Live UPI API OFF — add keys below for open-world existence</span>
+  {% endif %}
+  {% if status.mobile_live_enabled %}
+  <span class="badge text-bg-success">Mobile API ON</span>
+  {% else %}
+  <span class="badge text-bg-secondary">Mobile API OFF</span>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <form method="post" class="check-card">
+      <h2 class="h5 mb-2">1) Razorpay — Validate VPA (recommended)</h2>
+      <p class="small text-body-secondary mb-3">
+        Get keys:
+        <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener">dashboard.razorpay.com/app/keys</a>
+        · Docs:
+        <a href="https://razorpay.com/docs/payments/payment-methods/upi/vpa-validation/" target="_blank" rel="noopener">VPA validation API</a>
+      </p>
+      <div class="mb-3">
+        <label class="form-label">RAZORPAY_KEY_ID</label>
+        <input class="form-control" name="RAZORPAY_KEY_ID" value="{{ current.RAZORPAY_KEY_ID }}" placeholder="rzp_test_... or rzp_live_...">
+      </div>
+      <div class="mb-4">
+        <label class="form-label">RAZORPAY_KEY_SECRET</label>
+        <input class="form-control" name="RAZORPAY_KEY_SECRET" type="password" autocomplete="off" placeholder="{{ current.RAZORPAY_KEY_SECRET or 'paste secret' }}">
+      </div>
+
+      <h2 class="h5 mb-2">2) Cashfree — UPI verification (alternative)</h2>
+      <p class="small text-body-secondary mb-3">
+        Get credentials:
+        <a href="https://merchant.cashfree.com/" target="_blank" rel="noopener">merchant.cashfree.com</a>
+        · Docs:
+        <a href="https://www.cashfree.com/docs/api-reference/vrs/v2/upi-verification/upi-verification" target="_blank" rel="noopener">UPI Verification API</a>
+      </p>
+      <div class="mb-3">
+        <label class="form-label">CASHFREE_CLIENT_ID</label>
+        <input class="form-control" name="CASHFREE_CLIENT_ID" value="{{ current.CASHFREE_CLIENT_ID }}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">CASHFREE_CLIENT_SECRET</label>
+        <input class="form-control" name="CASHFREE_CLIENT_SECRET" type="password" autocomplete="off" placeholder="{{ current.CASHFREE_CLIENT_SECRET or 'paste secret' }}">
+      </div>
+      <div class="mb-4">
+        <label class="form-label">CASHFREE_ENV</label>
+        <select class="form-select" name="CASHFREE_ENV">
+          <option value="sandbox" {% if current.CASHFREE_ENV == 'sandbox' %}selected{% endif %}>sandbox</option>
+          <option value="production" {% if current.CASHFREE_ENV == 'production' %}selected{% endif %}>production</option>
+        </select>
+      </div>
+
+      <h2 class="h5 mb-2">3) Numverify mobile (optional)</h2>
+      <p class="small text-body-secondary mb-3">
+        <a href="https://numverify.com/" target="_blank" rel="noopener">numverify.com</a>
+      </p>
+      <div class="mb-4">
+        <label class="form-label">NUMVERIFY_ACCESS_KEY</label>
+        <input class="form-control" name="NUMVERIFY_ACCESS_KEY" type="password" autocomplete="off" placeholder="{{ current.NUMVERIFY_ACCESS_KEY or 'access key' }}">
+      </div>
+
+      <button type="submit" class="btn btn-accent btn-lg">Save keys to .env</button>
+    </form>
+
+    {% if status.upi_live_enabled %}
+    <form method="post" action="{{ url_for('test_live_api') }}" class="check-card mt-3">
+      <h2 class="h5 mb-3">Test open-world detection now</h2>
+      <div class="mb-3">
+        <label class="form-label" for="test-vpa">UPI ID to test</label>
+        <input class="form-control" id="test-vpa" name="vpa" value="{{ test_vpa or 'success@razorpay' }}" required>
+      </div>
+      <button type="submit" class="btn btn-outline-light">Call Razorpay/Cashfree live</button>
+      {% if test_result %}
+      <div class="live-name-box mt-3">
+        <div><strong>exists:</strong> {{ test_result.exists }}</div>
+        <div><strong>payee name:</strong> {{ test_result.payee_name or '—' }}</div>
+        <div><strong>provider:</strong> {{ test_result.provider or '—' }}</div>
+        <div class="small mt-1">{{ test_result.raw_message }}</div>
+      </div>
+      {% endif %}
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="result-card mb-3">
+      <h2 class="h5">Get API keys (external links)</h2>
+      <ul class="explain-list">
+        <li><a href="https://dashboard.razorpay.com/signup" target="_blank" rel="noopener">Sign up Razorpay</a></li>
+        <li><a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener">Razorpay API Keys</a></li>
+        <li><a href="https://razorpay.com/docs/payments/payment-methods/upi/vpa-validation/" target="_blank" rel="noopener">Razorpay VPA docs</a></li>
+        <li><a href="https://merchant.cashfree.com/merchants/signup" target="_blank" rel="noopener">Sign up Cashfree</a></li>
+        <li><a href="https://www.cashfree.com/docs/api-reference/vrs/v2/upi-verification/upi-verification" target="_blank" rel="noopener">Cashfree UPI verify docs</a></li>
+      </ul>
+    </div>
+    <div class="result-card">
+      <h2 class="h5">Without keys (still usable)</h2>
+      <ol class="verify-steps">
+        <li>Open <a href="http://127.0.0.1:5000/">http://127.0.0.1:5000/</a></li>
+        <li>Enter any UPI ID and check</li>
+        <li>Use <strong>Confirm from your UPI app</strong> on the result</li>
+        <li>“?” becomes ✔ / ✖ from what your app shows</li>
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}

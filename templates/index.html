@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<section class="hero-panel">
+  <div class="row align-items-center g-4 g-lg-5">
+    <div class="col-lg-5 hero-copy">
+      <p class="eyebrow">One check · full report</p>
+      <h1 class="hero-title">UPI Guard</h1>
+      <p class="hero-lead">
+        Enter a UPI ID, QR, or mobile once. We run all safety checks together —
+        then allow Pay only if it looks safe.
+      </p>
+      <ul class="hero-points mt-4">
+        <li><i class="bi bi-check2-circle"></i> Offline: format &amp; scam patterns</li>
+        <li><i class="bi bi-check2-circle"></i> Open-world exist check via Razorpay/Cashfree</li>
+        <li><i class="bi bi-check2-circle"></i> Pay only when Safe · Report to cybercrime</li>
+      </ul>
+      <p class="small mt-3 mb-0 opacity-75">
+        Site: <a href="http://127.0.0.1:5000/">http://127.0.0.1:5000/</a>
+        · <a href="{{ url_for('setup_apis') }}">Enable live API</a>
+      </p>
+    </div>
+    <div class="col-lg-7">
+      <div class="check-card hero-check-card">
+        <div class="check-card-header">
+          <span class="brand-inline"><i class="bi bi-shield-lock-fill"></i> UPI GUARD</span>
+          <small>Smart safety check</small>
+        </div>
+        <form action="{{ url_for('checker') }}" method="post" enctype="multipart/form-data" class="check-form" data-validate="smart">
+          <div class="mb-3">
+            <label class="form-label" for="smart-input">UPI ID / mobile / QR link</label>
+            <input class="form-control form-control-lg" id="smart-input" name="smart_input"
+                   placeholder="name@oksbi  ·  98XXXXXXXX  ·  upi://pay?pa=..." autocomplete="off">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="smart-amount">Amount (optional)</label>
+            <div class="input-group input-group-lg">
+              <span class="input-group-text">₹</span>
+              <input class="form-control" id="smart-amount" name="amount" type="number" min="0" step="0.01" placeholder="500">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="smart-qr">Or upload QR image</label>
+            <input class="form-control" type="file" id="smart-qr" name="qr_image" accept="image/*">
+            <input type="hidden" name="qr_text" id="qr-text-hidden" value="">
+          </div>
+          <div class="mb-4">
+            <label class="form-label" for="smart-msg">Suspicious message (optional)</label>
+            <textarea class="form-control" id="smart-msg" name="message" rows="2"
+                      placeholder="Paste SMS / WhatsApp text if any"></textarea>
+          </div>
+          <button type="submit" class="btn btn-accent w-100 btn-lg">Check &amp; get Safe / Unsafe</button>
+          <p class="form-text mt-2 mb-0">We auto-detect what you entered and run UPI + QR + mobile + message checks together.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mt-5">
+  <div class="section-head">
+    <h2>What runs automatically</h2>
+    <p>You don’t pick tools — one submit checks all of this.</p>
+  </div>
+  <div class="row g-3 auto-check-grid">
+    <div class="col-6 col-md-4">
+      <div class="feature-tile static-tile">
+        <i class="bi bi-person-vcard"></i>
+        <h3>UPI authenticity</h3>
+        <p>Format, fake patterns, registration signals</p>
+      </div>
+    </div>
+    <div class="col-6 col-md-4">
+      <div class="feature-tile static-tile">
+        <i class="bi bi-currency-rupee"></i>
+        <h3>Transaction risk</h3>
+        <p>Amount patterns scammers use</p>
+      </div>
+    </div>
+    <div class="col-6 col-md-4">
+      <div class="feature-tile static-tile">
+        <i class="bi bi-qr-code-scan"></i>
+        <h3>QR authenticity</h3>
+        <p>Hidden payee fields &amp; defects</p>
+      </div>
+    </div>
+    <div class="col-6 col-md-4">
+      <div class="feature-tile static-tile">
+        <i class="bi bi-phone"></i>
+        <h3>Mobile number</h3>
+        <p>Indian format &amp; fabricated patterns</p>
+      </div>
+    </div>
+    <div class="col-6 col-md-4">
+      <div class="feature-tile static-tile">
+        <i class="bi bi-chat-dots"></i>
+        <h3>Message scanner</h3>
+        <p>OTP, KYC, lottery, refund lures</p>
+      </div>
+    </div>
+    <div class="col-6 col-md-4">
+      <a class="feature-tile" href="{{ url_for('awareness') }}">
+        <i class="bi bi-book"></i>
+        <h3>How to verify</h3>
+        <p>Existence vs genuineness guide</p>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

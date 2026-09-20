@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'register' %}Register{% else %}Login{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-5">
+    <div class="check-card auth-card">
+      <div class="text-center mb-4">
+        <span class="brand-mark mx-auto mb-2"><i class="bi bi-shield-lock-fill"></i></span>
+        <h1 class="h3 mb-1">{% if mode == 'register' %}Create account{% else %}Welcome back{% endif %}</h1>
+        <p class="mb-0 text-body-secondary">
+          {% if mode == 'register' %}Join UPI Guard to track your checks and reports.
+          {% else %}Sign in to access your session and admin tools.
+          {% endif %}
+        </p>
+      </div>
+
+      {% if mode == 'register' %}
+      <form method="post" class="check-form" data-validate="register">
+        <div class="mb-3">
+          <label class="form-label" for="reg-user">Username</label>
+          <input class="form-control form-control-lg" id="reg-user" name="username" required autocomplete="username">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="reg-email">Email</label>
+          <input class="form-control form-control-lg" id="reg-email" name="email" type="email" required autocomplete="email">
+        </div>
+        <div class="mb-4">
+          <label class="form-label" for="reg-pass">Password</label>
+          <input class="form-control form-control-lg" id="reg-pass" name="password" type="password" minlength="6" required autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-accent w-100 btn-lg">Register</button>
+        <p class="text-center mt-3 mb-0">Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+      </form>
+      {% else %}
+      <form method="post" class="check-form" data-validate="login">
+        <div class="mb-3">
+          <label class="form-label" for="login-user">Username</label>
+          <input class="form-control form-control-lg" id="login-user" name="username" required autocomplete="username">
+        </div>
+        <div class="mb-4">
+          <label class="form-label" for="login-pass">Password</label>
+          <input class="form-control form-control-lg" id="login-pass" name="password" type="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-accent w-100 btn-lg">Login</button>
+        <p class="text-center mt-3 mb-0">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+        <p class="text-center small text-body-secondary mt-2 mb-0">Demo admin: <code>admin</code> / <code>admin123</code></p>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

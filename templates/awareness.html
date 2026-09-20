@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Awareness & Verify Guide{% endblock %}
+
+{% block content %}
+<div class="page-intro mb-4">
+  <h1>How to know if it is real</h1>
+  <p>Three different questions — format, existence, and genuineness — need three different answers.</p>
+</div>
+
+<div class="row g-3 g-md-4 mb-5">
+  <div class="col-md-4">
+    <article class="tip-tile verdict-tile bad">
+      <span class="tip-index">01</span>
+      <h2 class="h5">Is the format valid?</h2>
+      <p class="mb-2">A real UPI ID looks like <code>name@bank</code> (e.g. <code>rahul@oksbi</code>).</p>
+      <p class="mb-0 small text-body-secondary">Wrong format = it was <strong>never</strong> a real UPI ID (mistyped or invented junk).</p>
+    </article>
+  </div>
+  <div class="col-md-4">
+    <article class="tip-tile verdict-tile warn">
+      <span class="tip-index">02</span>
+      <h2 class="h5">Does it exist / registered?</h2>
+      <p class="mb-2">Type it in your UPI app (or enable Razorpay/Cashfree live API).</p>
+      <p class="mb-0 small text-body-secondary">App says “invalid UPI ID” → <strong>never registered</strong>. Name appears → it exists.</p>
+    </article>
+  </div>
+  <div class="col-md-4">
+    <article class="tip-tile verdict-tile ok">
+      <span class="tip-index">03</span>
+      <h2 class="h5">Is the payee genuine?</h2>
+      <p class="mb-2">Match the <em>name on the payment screen</em> with the real person/shop.</p>
+      <p class="mb-0 small text-body-secondary">Scammers can register real IDs. <strong>Exists ≠ safe</strong>.</p>
+    </article>
+  </div>
+</div>
+
+<section class="mb-5">
+  <div class="section-head mb-3">
+    <h2>Verify by type</h2>
+    <p>Use these steps every time before you pay.</p>
+  </div>
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="result-card h-100">
+        <h3 class="h5"><i class="bi bi-person-vcard"></i> UPI ID</h3>
+        <ol class="verify-steps">
+          <li>Check format: <code>username@provider</code></li>
+          <li>Watch for scam words: refund, kyc, lottery, support…</li>
+          <li>Enter ID in GPay / PhonePe / BHIM / bank app — do not pay yet</li>
+          <li>Read the bank-shown payee name carefully</li>
+          <li>Call the person/merchant if the name is unfamiliar</li>
+        </ol>
+        <a class="btn btn-accent btn-sm mt-2" href="{{ url_for('checker', tab='upi') }}">Check a UPI ID</a>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="result-card h-100">
+        <h3 class="h5"><i class="bi bi-qr-code-scan"></i> QR code</h3>
+        <ol class="verify-steps">
+          <li>Prefer printed shop boards over WhatsApp QR images</li>
+          <li>Scan only with an official UPI app</li>
+          <li>Confirm payee name + UPI ID before PIN</li>
+          <li>Cancel if name ≠ shop / person you trust</li>
+          <li>Use UPI Guard to inspect hidden <code>pa=</code> payee field</li>
+        </ol>
+        <a class="btn btn-accent btn-sm mt-2" href="{{ url_for('checker', tab='qr') }}">Analyze a QR</a>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="result-card h-100">
+        <h3 class="h5"><i class="bi bi-phone"></i> Mobile number</h3>
+        <ol class="verify-steps">
+          <li>Indian mobiles: 10 digits starting 6–9</li>
+          <li>Reject obvious fakes like 9876543210 / all same digits</li>
+          <li>Call from a known contact — don’t trust SMS alone</li>
+          <li>Ask them to share UPI live; match the app name</li>
+          <li>Never send ₹1 to “verify” a number</li>
+        </ol>
+        <a class="btn btn-accent btn-sm mt-2" href="{{ url_for('checker', tab='mobile') }}">Check a mobile</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-head mb-3">
+  <h2>More warning signs</h2>
+  <p>Patterns scammers rely on every day.</p>
+</div>
+<div class="row g-3 g-md-4">
+  {% for tip in tips %}
+  <div class="col-md-6 col-xl-4">
+    <article class="tip-tile">
+      <span class="tip-index">{{ '%02d'|format(loop.index) }}</span>
+      <h2 class="h5">{{ tip.title }}</h2>
+      <p class="mb-0">{{ tip.body }}</p>
+    </article>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="awareness-strip mt-5">
+  <div>
+    <h2 class="h4 mb-1">Practice with samples</h2>
+    <p class="mb-0">Try <code>scamrefund@paytm</code>, <code>not-a-real-id</code>, or mobile <code>9876543210</code>.</p>
+  </div>
+  <a href="{{ url_for('checker', tab='upi') }}" class="btn btn-accent">Open Risk Checker</a>
+</div>
+{% endblock %}
