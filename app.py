@@ -28,7 +28,7 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 ALLOWED_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("UPI_GUARD_SECRET", "upi-guard-dev-secret-change-me")
+app.secret_key = os.environ.get("UPI_GUARD_SECRET", "scamcatcherrr-dev-secret-change-me")
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)

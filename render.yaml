@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: scamcatcherrr
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: UPI_GUARD_SECRET
+        generateValue: true
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: CASHFREE_CLIENT_ID
+        sync: false
+      - key: CASHFREE_CLIENT_SECRET
+        sync: false
+      - key: CASHFREE_ENV
+        value: production

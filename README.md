@@ -1,6 +1,7 @@
-# UPI Guard — UPI Fraud Detection & Awareness System
+# ScamCatcherrr — UPI Fraud Detection & Awareness
 
-Educational web app that helps users **check before they pay**: UPI ID risk, transaction context, QR payloads, and suspicious messages — with a fraud-risk score, plain-language explanations, community reports, and an admin dashboard.
+Educational web app (**formerly UPI Guard**) that helps users **check before they pay**.
+
 
 > Not a bank product. For awareness, demos, and coursework. Always verify payees through official channels.
 
