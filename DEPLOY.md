@@ -26,11 +26,14 @@ Use **Render**, Railway, Fly.io, or PythonAnywhere instead.
 
 Free tier may sleep after idle; first load can take ~30–60s.
 
-## Local run (Windows CMD)
+## Local run (like `npm run dev`)
 
 ```cmd
 cd /d C:\Users\User\Projects\UPI-Fraud-Detection-System
-.venv\Scripts\python.exe app.py
+npm run setup
+npm run dev
 ```
 
-Open http://127.0.0.1:5000/
+Then open **http://127.0.0.1:5000/**
+
+(`npm run dev` starts Flask — this is not a Node app.)

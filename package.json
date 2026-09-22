@@ -1,0 +1,10 @@
+{
+  "name": "scamcatcherrr",
+  "private": true,
+  "description": "ScamCatcherrr — run with npm run dev (starts Flask)",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "start": "node scripts/dev.js",
+    "setup": "node scripts/setup.js"
+  }
+}
